@@ -57,4 +57,9 @@ def set_verified(db: Session, user: User, verified: bool):
     user.is_verified = verified
     db.commit()
     db.refresh(user)
-    return user 
+    return user
+
+def delete_user(db: Session, user: User):
+    db.delete(user)
+    db.commit()
+    return True

@@ -9,19 +9,32 @@ from app.core import security, email_utils
 from app.api.deps import get_db, get_current_user
 from jose import jwt
 from datetime import timedelta
+from app.crud import user_profile as crud_user_profile
+from app.schemas.user_profile import UserProfileCreate , UserProfileRead
+from app.schemas.user import UserWithProfileRead
+
+
 
 router = APIRouter()
 
 # Registration (send OTP)
-@router.post("/register", response_model=UserRead)
+@router.post("/register", response_model=UserWithProfileRead)  # Changed response model
 def register_user(user_in: UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     db_user = crud_user.get_by_email(db, email=user_in.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
+
     user = crud_user.create_user(db, user_in)
+
+    profile = None
+    if user_in.profile:
+        profile = crud_user_profile.create_profile(db, user.id, user_in.profile)
+
     otp_obj = crud_otp.create_otp(db, user.email, "activation")
     background_tasks.add_task(email_utils.send_otp_email, user.email, otp_obj.otp_code, "activation")
-    return user
+
+    # Return user with profile data
+    return {**user.__dict__, "profile": profile}
 
 # Resend activation OTP
 @router.post("/resend-activation-otp")
@@ -93,15 +106,27 @@ def change_password(change_in: PasswordChange, db: Session = Depends(get_db), cu
     return {"msg": "Password changed"}
 
 # Get user details
-@router.get("/me", response_model=UserRead)
-def get_me(current_user=Depends(get_current_user)):
-    return current_user
+@router.get("/me", response_model=UserWithProfileRead)
+def get_me(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    profile = crud_user_profile.get_by_user_id(db, current_user.id)
+    return {**current_user.__dict__, "profile": profile}
 
 # Update user details
-@router.put("/me", response_model=UserRead)
+@router.put("/me", response_model=UserWithProfileRead)  # Changed from UserRead
 def update_me(user_in: UserUpdate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     user = crud_user.update_user(db, current_user, user_in)
-    return user
+
+    # Fetch profile data to include in response
+    profile = crud_user_profile.get_by_user_id(db, user.id)
+
+    # Return user with profile data (same as GET /me)
+    return {**user.__dict__, "profile": profile}
+
+@router.delete("/me", status_code=204)
+def delete_me(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    crud_user.delete_user(db, current_user)
+    return None
+
 
 @router.post("/verify-access-token")
 def verify_access_token(token: str = Body(...), db: Session = Depends(get_db)):

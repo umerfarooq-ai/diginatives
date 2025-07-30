@@ -1,5 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+from app.schemas.user_profile import UserProfileCreate, UserProfileRead
+
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -9,6 +11,8 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    profile: Optional[UserProfileCreate] = None
+
 
 class UserRead(UserBase):
     id: int
@@ -16,6 +20,9 @@ class UserRead(UserBase):
     is_verified: bool
     class Config:
         from_attributes = True
+
+class UserWithProfileRead(UserRead):
+    profile: Optional[UserProfileRead] = None
 
 class UserUpdate(BaseModel):
     first_name: Optional[str] = None
