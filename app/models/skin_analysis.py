@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.base import Base
@@ -29,9 +29,9 @@ class SkinAnalysis(Base):
     wrinkles_score = Column(Float, nullable=False)
     skin_texture_score = Column(Float, nullable=False)
 
-    # Recommendations
-    am_routine = Column(Text, nullable=True)
-    pm_routine = Column(Text, nullable=True)
+    # Enhanced Recommendations with structured routines
+    am_routine = Column(JSON, nullable=True)  # Changed to JSON for structured data
+    pm_routine = Column(JSON, nullable=True)  # Changed to JSON for structured data
     nutrition_recommendations = Column(Text, nullable=True)
     product_recommendations = Column(Text, nullable=True)
     ingredient_recommendations = Column(Text, nullable=True)

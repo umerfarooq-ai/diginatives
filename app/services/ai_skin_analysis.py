@@ -1,7 +1,7 @@
 import os
 import base64
 import google.generativeai as genai
-from typing import Dict, Any
+from typing import Dict, Any, List
 import json
 import re
 from dotenv import load_dotenv
@@ -24,7 +24,7 @@ class AISkinAnalysisService:
         Analyze skin image using Google Gemini Vision API
         """
         try:
-            # Create the prompt for skin analysis
+            # Create the prompt for skin analysis with detailed routines
             prompt = """
             Analyze this skin image and provide a comprehensive, non-medical cosmetic skincare assessment.
 
@@ -47,8 +47,49 @@ class AISkinAnalysisService:
                 "fineLines": float (0-100),
                 "texture": float (0-100)
             },
-            "amRoutine": "string with steps (1. cleanser, 2. serum, ...)",
-            "pmRoutine": "string with steps",
+            "amRoutine": {
+                "steps": [
+                    {
+                        "step_number": 1,
+                        "product_type": "AI-determined product based on skin analysis",
+                        "description": "Brief description of why this product is recommended and how to apply (max 40 words)"
+                    },
+                    {
+                        "step_number": 2,
+                        "product_type": "AI-determined product based on skin analysis",
+                        "description": "Brief description of benefits and application method (max 40 words)"
+                    },
+                    {
+                        "step_number": 3,
+                        "product_type": "AI-determined product based on skin analysis",
+                        "description": "Brief description of hydration benefits and application (max 40 words)"
+                    },
+                    {
+                        "step_number": 4,
+                        "product_type": "AI-determined product based on skin analysis",
+                        "description": "Brief description of sun protection importance and application (max 40 words)"
+                    }
+                ]
+            },
+            "pmRoutine": {
+                "steps": [
+                    {
+                        "step_number": 1,
+                        "product_type": "AI-determined product based on skin analysis",
+                        "description": "Brief description of removing makeup and impurities (max 40 words)"
+                    },
+                    {
+                        "step_number": 2,
+                        "product_type": "AI-determined product based on skin analysis",
+                        "description": "Brief description of active ingredients and benefits (max 40 words)"
+                    },
+                    {
+                        "step_number": 3,
+                        "product_type": "AI-determined product based on skin analysis",
+                        "description": "Brief description of overnight repair and application (max 40 words)"
+                    }
+                ]
+            },
             "nutritionRecommendations": "short string of general dietary advice",
             "productRecommendations": "list of product types, not brands",
             "ingredientRecommendations": "list of common skincare ingredients"
@@ -56,10 +97,13 @@ class AISkinAnalysisService:
 
             Guidelines:
             - This is not a medical diagnosis.
-            - Do not mention or infer medical conditions (e.g., acne severity, skin disease).
-            - Assume the user is asking for a **cosmetic analysis** and routine suggestions based on visible skin tone, hydration, oiliness, etc.
-            - Use practical, commonly known skincare advice.
-            - Return only the JSON. Do not include explanations or text outside the JSON.
+            - Do not mention or infer medical conditions.
+            - Each routine step description must be MAXIMUM 40 words.
+            - Make descriptions practical and actionable.
+            - Focus on cosmetic benefits and general skincare advice.
+            - Choose product types based on the skin analysis results (e.g., if skin is dry, suggest hydrating products; if oily, suggest oil-control products).
+            - Product types should be specific but not brand names (e.g., "Hydrating Cleanser", "Vitamin C Serum", "Oil-Free Moisturizer", "Broad-Spectrum SPF").
+            - Return only the JSON. Do not include explanations outside the JSON.
             """
 
             # Convert base64 to bytes for Gemini
@@ -93,6 +137,10 @@ class AISkinAnalysisService:
                         json_str = ai_response
 
                 result = json.loads(json_str)
+                
+                # Validate and clean routine descriptions
+                result = self._validate_routine_descriptions(result)
+                
                 return result
 
             except json.JSONDecodeError:
@@ -104,9 +152,36 @@ class AISkinAnalysisService:
             print("🔄 Using fallback response...")
             return self._get_error_response(str(e))
 
+    def _validate_routine_descriptions(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate and clean routine descriptions to ensure they're under 40 words
+        """
+        # Validate AM routine
+        if 'amRoutine' in result and 'steps' in result['amRoutine']:
+            for step in result['amRoutine']['steps']:
+                if 'description' in step:
+                    step['description'] = self._truncate_description(step['description'])
+        
+        # Validate PM routine
+        if 'pmRoutine' in result and 'steps' in result['pmRoutine']:
+            for step in result['pmRoutine']['steps']:
+                if 'description' in step:
+                    step['description'] = self._truncate_description(step['description'])
+        
+        return result
+
+    def _truncate_description(self, description: str, max_words: int = 40) -> str:
+        """
+        Truncate description to maximum number of words
+        """
+        words = description.split()
+        if len(words) <= max_words:
+            return description
+        return ' '.join(words[:max_words]) + '...'
+
     def _parse_field_lines(self, text: str) -> Dict[str, Any]:
         """
-        Parse AI response text and extract structured data
+        Parse AI response text and extract structured data with enhanced routines
         """
         try:
             result = {
@@ -126,8 +201,49 @@ class AISkinAnalysisService:
                     "fineLines": 40.0,
                     "texture": 70.0
                 },
-                "amRoutine": "1. Gentle cleanser\n2. Vitamin C serum\n3. Moisturizer\n4. SPF sunscreen",
-                "pmRoutine": "1. Double cleanse\n2. Retinol serum\n3. Moisturizer",
+                "amRoutine": {
+                    "steps": [
+                        {
+                            "step_number": 1,
+                            "product_type": "Gentle Facial Cleanser",
+                            "description": "Remove dirt and oil with a gentle cleanser. Apply in circular motions and rinse with lukewarm water."
+                        },
+                        {
+                            "step_number": 2,
+                            "product_type": "Antioxidant Serum",
+                            "description": "Apply antioxidant serum to brighten skin and protect from environmental damage. Use 2-3 drops."
+                        },
+                        {
+                            "step_number": 3,
+                            "product_type": "Lightweight Moisturizer",
+                            "description": "Hydrate skin with a lightweight moisturizer. Gently pat until fully absorbed."
+                        },
+                        {
+                            "step_number": 4,
+                            "product_type": "Broad-Spectrum SPF",
+                            "description": "Protect skin with broad-spectrum SPF 30+. Apply generously and reapply every 2 hours."
+                        }
+                    ]
+                },
+                "pmRoutine": {
+                    "steps": [
+                        {
+                            "step_number": 1,
+                            "product_type": "Double Cleanse System",
+                            "description": "First remove makeup with oil cleanser, then cleanse with gentle face wash for clean skin."
+                        },
+                        {
+                            "step_number": 2,
+                            "product_type": "Targeted Treatment Serum",
+                            "description": "Apply targeted serum for your skin concerns. Let it absorb before next step."
+                        },
+                        {
+                            "step_number": 3,
+                            "product_type": "Night Repair Moisturizer",
+                            "description": "Use richer moisturizer for overnight repair. Apply in upward motions."
+                        }
+                    ]
+                },
                 "nutritionRecommendations": "Stay hydrated, eat antioxidant-rich foods, reduce sugar intake",
                 "productRecommendations": "Gentle cleanser, Vitamin C, Retinol, Moisturizer, SPF",
                 "ingredientRecommendations": "Hyaluronic acid, Vitamin C, Retinol, Niacinamide"
@@ -222,8 +338,49 @@ class AISkinAnalysisService:
                 "fineLines": 40.0,
                 "texture": 70.0
             },
-            "amRoutine": "FALLBACK: Basic skincare routine (AI analysis failed)",
-            "pmRoutine": "FALLBACK: Basic evening routine (AI analysis failed)",
+            "amRoutine": {
+                "steps": [
+                    {
+                        "step_number": 1,
+                        "product_type": "Gentle Facial Cleanser",
+                        "description": "FALLBACK: Cleanse face with gentle cleanser to remove impurities and prepare skin."
+                    },
+                    {
+                        "step_number": 2,
+                        "product_type": "Antioxidant Serum",
+                        "description": "FALLBACK: Apply antioxidant serum to brighten and protect skin from damage."
+                    },
+                    {
+                        "step_number": 3,
+                        "product_type": "Lightweight Moisturizer",
+                        "description": "FALLBACK: Hydrate skin with lightweight moisturizer for all-day comfort."
+                    },
+                    {
+                        "step_number": 4,
+                        "product_type": "Broad-Spectrum SPF",
+                        "description": "FALLBACK: Protect with broad-spectrum sunscreen to prevent sun damage."
+                    }
+                ]
+            },
+            "pmRoutine": {
+                "steps": [
+                    {
+                        "step_number": 1,
+                        "product_type": "Double Cleanse System",
+                        "description": "FALLBACK: Remove makeup and cleanse thoroughly for clean skin."
+                    },
+                    {
+                        "step_number": 2,
+                        "product_type": "Targeted Treatment Serum",
+                        "description": "FALLBACK: Apply targeted treatment for your specific skin concerns."
+                    },
+                    {
+                        "step_number": 3,
+                        "product_type": "Night Repair Moisturizer",
+                        "description": "FALLBACK: Use nourishing night cream for overnight repair and hydration."
+                    }
+                ]
+            },
             "nutritionRecommendations": "FALLBACK: General nutrition advice (AI analysis failed)",
             "productRecommendations": "FALLBACK: Basic products (AI analysis failed)",
             "ingredientRecommendations": "FALLBACK: Common ingredients (AI analysis failed)",
@@ -240,8 +397,8 @@ class AISkinAnalysisService:
             "error_message": f"AI Analysis Failed: {error_message}",
             "treatmentProgram": {},
             "skinHealthMatrix": {},
-            "amRoutine": "",
-            "pmRoutine": "",
+            "amRoutine": {"steps": []},
+            "pmRoutine": {"steps": []},
             "nutritionRecommendations": "",
             "productRecommendations": "",
             "ingredientRecommendations": ""

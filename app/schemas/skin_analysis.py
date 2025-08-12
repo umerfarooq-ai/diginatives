@@ -2,6 +2,12 @@ from pydantic import BaseModel
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 
+# New Routine Step Schema
+class RoutineStep(BaseModel):
+    step_number: int
+    product_type: str
+    description: str  # Max 40 words
+
 # Request Schemas
 class SkinAnalysisRequest(BaseModel):
     user_id: int
@@ -25,13 +31,17 @@ class SkinHealthMatrix(BaseModel):
     fineLines: float
     texture: float
 
+# Enhanced Routine Schema
+class DetailedRoutine(BaseModel):
+    steps: List[RoutineStep]
+
 # AI Response Schema
 class SkinAnalysisData(BaseModel):
     scanId: str
     treatmentProgram: TreatmentProgram
     skinHealthMatrix: SkinHealthMatrix
-    amRoutine: str
-    pmRoutine: str
+    amRoutine: DetailedRoutine
+    pmRoutine: DetailedRoutine
     nutritionRecommendations: str
     productRecommendations: str
     ingredientRecommendations: str
@@ -58,8 +68,8 @@ class SkinAnalysisCreate(BaseModel):
     oiliness_score: float
     wrinkles_score: float
     skin_texture_score: float
-    am_routine: str
-    pm_routine: str
+    am_routine: Dict[str, Any]  # JSON data
+    pm_routine: Dict[str, Any]  # JSON data
     nutrition_recommendations: str
     product_recommendations: str
     ingredient_recommendations: str
@@ -82,8 +92,8 @@ class SkinAnalysisRead(BaseModel):
     oiliness_score: float
     wrinkles_score: float
     skin_texture_score: float
-    am_routine: str
-    pm_routine: str
+    am_routine: Optional[Dict[str, Any]]
+    pm_routine: Optional[Dict[str, Any]]
     nutrition_recommendations: str
     product_recommendations: str
     ingredient_recommendations: str
