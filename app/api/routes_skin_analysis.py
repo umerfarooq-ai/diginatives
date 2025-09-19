@@ -70,14 +70,8 @@ async def analyze_skin(
                 detail=f"AI Analysis failed: {ai_result.get('error_message')}"
             )
 
-        # Only print treatment and matrix keys if they exist (not None)
-        treatment = ai_result.get('treatmentProgram')
+        # Get skin health matrix
         matrix = ai_result.get('skinHealthMatrix')
-
-        if treatment:
-            print(f"treatmentProgram keys: {list(treatment.keys())}")
-        else:
-            print("treatmentProgram: None")
 
         if matrix:
             print(f"skinHealthMatrix keys: {list(matrix.keys())}")
@@ -94,20 +88,14 @@ async def analyze_skin(
             "scan_id": scan_id,
             "user_id": user_id,
             "image_path": image_path,
-            "hydration_score": treatment["hydration"],
-            "elasticity_score": treatment["elasticity"],
-            "complexion_score": treatment["complexion"],
-            "texture_score": treatment["texture"],
-            "pores_score": matrix["pores"],
-            "eye_bags_score": matrix["underEyeAppearance"],  # Map to database field
-            "acne_score": matrix["blemishes"],  # Map to database field
-            "spots_score": matrix["spots"],
-            "redness_score": matrix["redness"],
-            "oiliness_score": matrix["oiliness"],
-            "wrinkles_score": matrix["fineLines"],  # Map to database field
-            "skin_texture_score": matrix["texture"],
-            "am_routine": ai_result.get("amRoutine", {}),  # Store as JSON
-            "pm_routine": ai_result.get("pmRoutine", {}),  # Store as JSON
+            "moisture_score": matrix["moisture"],
+            "texture_score": matrix["texture"],
+            "acne_score": matrix["acne"],
+            "dryness_score": matrix["dryness"],
+            "elasticity_score": matrix["elasticity"],
+            "complexion_score": matrix["complexion"],
+            "am_routine": ai_result.get("amRoutine", {}),
+            "pm_routine": ai_result.get("pmRoutine", {}),
             "nutrition_recommendations": ai_result.get("nutritionRecommendations", ""),
             "product_recommendations": ai_result.get("productRecommendations", ""),
             "ingredient_recommendations": ai_result.get("ingredientRecommendations", "")
@@ -121,7 +109,6 @@ async def analyze_skin(
         # Prepare response with scan_id
         response_data = {
             "scanId": scan_id,
-            "treatmentProgram": treatment,
             "skinHealthMatrix": matrix,
             "amRoutine": ai_result.get("amRoutine", {}),
             "pmRoutine": ai_result.get("pmRoutine", {}),
@@ -158,21 +145,13 @@ async def get_skin_analysis(
 
     response_data = {
         "scanId": skin_analysis.scan_id,
-        "treatmentProgram": {
-            "hydration": skin_analysis.hydration_score,
-            "elasticity": skin_analysis.elasticity_score,
-            "complexion": skin_analysis.complexion_score,
-            "texture": skin_analysis.texture_score
-        },
         "skinHealthMatrix": {
-            "pores": skin_analysis.pores_score,
-            "underEyeAppearance": skin_analysis.eye_bags_score,  # Map from database field
-            "blemishes": skin_analysis.acne_score,  # Map from database field
-            "spots": skin_analysis.spots_score,
-            "redness": skin_analysis.redness_score,
-            "oiliness": skin_analysis.oiliness_score,
-            "fineLines": skin_analysis.wrinkles_score,  # Map from database field
-            "texture": skin_analysis.skin_texture_score
+            "moisture": skin_analysis.moisture_score,
+            "texture": skin_analysis.texture_score,
+            "acne": skin_analysis.acne_score,
+            "dryness": skin_analysis.dryness_score,
+            "elasticity": skin_analysis.elasticity_score,
+            "complexion": skin_analysis.complexion_score
         },
         "amRoutine": skin_analysis.am_routine or {"steps": []},
         "pmRoutine": skin_analysis.pm_routine or {"steps": []},
@@ -223,21 +202,13 @@ async def get_user_skin_analysis_history(
         history_data.append({
             "scanId": analysis.scan_id,
             "analysisDate": analysis.analysis_date.isoformat() if analysis.analysis_date else None,
-            "treatmentProgram": {
-                "hydration": analysis.hydration_score,
-                "elasticity": analysis.elasticity_score,
-                "complexion": analysis.complexion_score,
-                "texture": analysis.texture_score
-            },
             "skinHealthMatrix": {
-                "pores": analysis.pores_score,
-                "underEyeAppearance": analysis.eye_bags_score,
-                "blemishes": analysis.acne_score,
-                "spots": analysis.spots_score,
-                "redness": analysis.redness_score,
-                "oiliness": analysis.oiliness_score,
-                "fineLines": analysis.wrinkles_score,
-                "texture": analysis.skin_texture_score
+                "moisture": analysis.moisture_score,
+                "texture": analysis.texture_score,
+                "acne": analysis.acne_score,
+                "dryness": analysis.dryness_score,
+                "elasticity": analysis.elasticity_score,
+                "complexion": analysis.complexion_score
             },
             "amRoutine": analysis.am_routine or {"steps": []},
             "pmRoutine": analysis.pm_routine or {"steps": []},

@@ -31,21 +31,13 @@ class AISkinAnalysisService:
             Please return the results in the following structured JSON format:
 
             {
-            "treatmentProgram": {
-                "hydration": float (0-100),
-                "elasticity": float (0-100),
-                "complexion": float (0-100),
-                "texture": float (0-100)
-            },
             "skinHealthMatrix": {
-                "pores": float (0-100),
-                "underEyeAppearance": float (0-100), 
-                "blemishes": float (0-100),
-                "spots": float (0-100),
-                "redness": float (0-100),
-                "oiliness": float (0-100),
-                "fineLines": float (0-100),
-                "texture": float (0-100)
+                "moisture": float (0-100),
+                "texture": float (0-100),
+                "acne": float (0-100),
+                "dryness": float (0-100),
+                "elasticity": float (0-100),
+                "complexion": float (0-100)
             },
             "amRoutine": {
                 "steps": [
@@ -87,6 +79,11 @@ class AISkinAnalysisService:
                         "step_number": 3,
                         "product_type": "AI-determined product based on skin analysis",
                         "description": "Brief description of overnight repair and application (max 40 words)"
+                    },
+                    {
+                        "step_number": 4,
+                        "product_type": "AI-determined product based on skin analysis",
+                        "description": "Brief description of final hydration and skin barrier support (max 40 words)"
                     }
                 ]
             },
@@ -103,262 +100,118 @@ class AISkinAnalysisService:
             - Focus on cosmetic benefits and general skincare advice.
             - Choose product types based on the skin analysis results (e.g., if skin is dry, suggest hydrating products; if oily, suggest oil-control products).
             - Product types should be specific but not brand names (e.g., "Hydrating Cleanser", "Vitamin C Serum", "Oil-Free Moisturizer", "Broad-Spectrum SPF").
+            - BOTH AM and PM routines must have exactly 4 steps each.
             - Return only the JSON. Do not include explanations outside the JSON.
             """
 
-            # Convert base64 to bytes for Gemini
-            image_bytes = base64.b64decode(image_base64)
-
-            # Call Gemini Vision API
-            response = self.model.generate_content([
-                prompt,
-                {
-                    "mime_type": "image/jpeg",
-                    "data": image_bytes
-                }
-            ])
-
-            # Get the response content
-            ai_response = response.text
-            print("Gemini RAW OUTPUT:\n", ai_response)
-
-            # Try to parse as JSON first
-            try:
-                # Extract JSON from the response if it's wrapped in markdown
-                json_match = re.search(r'```json\s*(.*?)\s*```', ai_response, re.DOTALL)
-                if json_match:
-                    json_str = json_match.group(1)
-                else:
-                    # Try to find JSON object in the response
-                    json_match = re.search(r'\{.*\}', ai_response, re.DOTALL)
-                    if json_match:
-                        json_str = json_match.group(0)
-                    else:
-                        json_str = ai_response
-
-                result = json.loads(json_str)
-                
-                # Validate and clean routine descriptions
-                result = self._validate_routine_descriptions(result)
-                
-                return result
-
-            except json.JSONDecodeError:
-                print("JSON parsing failed, using text parser")
-                return self._parse_field_lines(ai_response)
-
-        except Exception as e:
-            print(f"❌ Error in Gemini analysis: {e}")
-            print("🔄 Using fallback response...")
-            return self._get_error_response(str(e))
-
-    def _validate_routine_descriptions(self, result: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Validate and clean routine descriptions to ensure they're under 40 words
-        """
-        # Validate AM routine
-        if 'amRoutine' in result and 'steps' in result['amRoutine']:
-            for step in result['amRoutine']['steps']:
-                if 'description' in step:
-                    step['description'] = self._truncate_description(step['description'])
-        
-        # Validate PM routine
-        if 'pmRoutine' in result and 'steps' in result['pmRoutine']:
-            for step in result['pmRoutine']['steps']:
-                if 'description' in step:
-                    step['description'] = self._truncate_description(step['description'])
-        
-        return result
-
-    def _truncate_description(self, description: str, max_words: int = 40) -> str:
-        """
-        Truncate description to maximum number of words
-        """
-        words = description.split()
-        if len(words) <= max_words:
-            return description
-        return ' '.join(words[:max_words]) + '...'
-
-    def _parse_field_lines(self, text: str) -> Dict[str, Any]:
-        """
-        Parse AI response text and extract structured data with enhanced routines
-        """
-        try:
-            result = {
-                "treatmentProgram": {
-                    "hydration": 70.0,
-                    "elasticity": 65.0,
-                    "complexion": 75.0,
-                    "texture": 70.0
-                },
-                "skinHealthMatrix": {
-                    "pores": 60.0,
-                    "underEyeAppearance": 50.0,
-                    "blemishes": 40.0,
-                    "spots": 0.0,
-                    "redness": 45.0,
-                    "oiliness": 65.0,
-                    "fineLines": 40.0,
-                    "texture": 70.0
-                },
-                "amRoutine": {
-                    "steps": [
-                        {
-                            "step_number": 1,
-                            "product_type": "Gentle Facial Cleanser",
-                            "description": "Remove dirt and oil with a gentle cleanser. Apply in circular motions and rinse with lukewarm water."
-                        },
-                        {
-                            "step_number": 2,
-                            "product_type": "Antioxidant Serum",
-                            "description": "Apply antioxidant serum to brighten skin and protect from environmental damage. Use 2-3 drops."
-                        },
-                        {
-                            "step_number": 3,
-                            "product_type": "Lightweight Moisturizer",
-                            "description": "Hydrate skin with a lightweight moisturizer. Gently pat until fully absorbed."
-                        },
-                        {
-                            "step_number": 4,
-                            "product_type": "Broad-Spectrum SPF",
-                            "description": "Protect skin with broad-spectrum SPF 30+. Apply generously and reapply every 2 hours."
-                        }
-                    ]
-                },
-                "pmRoutine": {
-                    "steps": [
-                        {
-                            "step_number": 1,
-                            "product_type": "Double Cleanse System",
-                            "description": "First remove makeup with oil cleanser, then cleanse with gentle face wash for clean skin."
-                        },
-                        {
-                            "step_number": 2,
-                            "product_type": "Targeted Treatment Serum",
-                            "description": "Apply targeted serum for your skin concerns. Let it absorb before next step."
-                        },
-                        {
-                            "step_number": 3,
-                            "product_type": "Night Repair Moisturizer",
-                            "description": "Use richer moisturizer for overnight repair. Apply in upward motions."
-                        }
-                    ]
-                },
-                "nutritionRecommendations": "Stay hydrated, eat antioxidant-rich foods, reduce sugar intake",
-                "productRecommendations": "Gentle cleanser, Vitamin C, Retinol, Moisturizer, SPF",
-                "ingredientRecommendations": "Hyaluronic acid, Vitamin C, Retinol, Niacinamide"
+            # Convert base64 to image data
+            image_data = base64.b64decode(image_base64)
+            
+            # Create the image part for the model
+            image_part = {
+                "mime_type": "image/jpeg",
+                "data": image_data
             }
-
-            # Try to extract scores from the text
-            lines = text.split('\n')
-            for line in lines:
-                line = line.strip().lower()
-
-                # Extract hydration score
-                if 'hydration' in line:
-                    score = self._extract_score_from_line(line)
-                    if score is not None:
-                        result["treatmentProgram"]["hydration"] = score
-
-                # Extract elasticity score
-                elif 'elasticity' in line:
-                    score = self._extract_score_from_line(line)
-                    if score is not None:
-                        result["treatmentProgram"]["elasticity"] = score
-
-                # Extract complexion score
-                elif 'complexion' in line:
-                    score = self._extract_score_from_line(line)
-                    if score is not None:
-                        result["treatmentProgram"]["complexion"] = score
-
-                # Extract texture score
-                elif 'texture' in line:
-                    score = self._extract_score_from_line(line)
-                    if score is not None:
-                        result["treatmentProgram"]["texture"] = score
-
-                # Extract skin health matrix scores
-                elif any(keyword in line for keyword in
-                         ['pores', 'under eye', 'blemishes', 'spots', 'redness', 'oiliness', 'fine lines']):
-                    for keyword in ['pores', 'under eye', 'blemishes', 'spots', 'redness', 'oiliness', 'fine lines']:
-                        if keyword in line:
-                            score = self._extract_score_from_line(line)
-                            if score is not None:
-                                if keyword == 'under eye':
-                                    result["skinHealthMatrix"]["underEyeAppearance"] = score
-                                elif keyword == 'fine lines':
-                                    result["skinHealthMatrix"]["fineLines"] = score
-                                elif keyword == 'blemishes':
-                                    result["skinHealthMatrix"]["blemishes"] = score
-                                else:
-                                    result["skinHealthMatrix"][keyword] = score
-                            break
-
-            return result
-
+            
+            # Generate content with the model
+            response = self.model.generate_content([prompt, image_part])
+            
+            # Extract and parse the JSON response
+            ai_result = self._parse_ai_response(response.text)
+            
+            # Validate routine descriptions
+            ai_result = self._validate_routine_descriptions(ai_result)
+            
+            return ai_result
+            
         except Exception as e:
-            print(f"Text parsing failed: {e}")
+            print(f"Error in AI skin analysis: {str(e)}")
             return self._get_fallback_response()
 
-    def _extract_score_from_line(self, line: str) -> float:
+    def _parse_ai_response(self, response_text: str) -> Dict[str, Any]:
         """
-        Extract a score (0-100) from a text line
+        Parse the AI response and extract JSON data
         """
         try:
-            # Look for numbers in the line
-            numbers = re.findall(r'\d+(?:\.\d+)?', line)
-            for num in numbers:
-                score = float(num)
-                if 0 <= score <= 100:
-                    return score
-            return None
-        except:
-            return None
+            # Look for JSON in the response
+            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            if json_match:
+                json_str = json_match.group()
+                ai_result = json.loads(json_str)
+                
+                # Debug: Print the structure
+                print("AI Result Structure:")
+                print(f"Keys in ai_result: {list(ai_result.keys())}")
+                if 'skinHealthMatrix' in ai_result:
+                    print(f"skinHealthMatrix keys: {list(ai_result['skinHealthMatrix'].keys())}")
+                
+                return ai_result
+            else:
+                print("No JSON found in AI response")
+                return self._get_fallback_response()
+                
+        except json.JSONDecodeError as e:
+            print(f"JSON decode error: {str(e)}")
+            return self._get_fallback_response()
+        except Exception as e:
+            print(f"Error parsing AI response: {str(e)}")
+            return self._get_fallback_response()
+
+    def _validate_routine_descriptions(self, ai_result: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate and truncate routine descriptions to ensure they are under 40 words
+        """
+        for routine_type in ['amRoutine', 'pmRoutine']:
+            if routine_type in ai_result and 'steps' in ai_result[routine_type]:
+                for step in ai_result[routine_type]['steps']:
+                    if 'description' in step:
+                        step['description'] = self._truncate_description(step['description'])
+        
+        return ai_result
+
+    def _truncate_description(self, description: str) -> str:
+        """
+        Truncate description to maximum 40 words
+        """
+        words = description.split()
+        if len(words) > 40:
+            return ' '.join(words[:40]) + "..."
+        return description
 
     def _get_fallback_response(self) -> Dict[str, Any]:
         """
-        Return a fallback response if AI analysis fails
+        Return a fallback response when AI analysis fails
         """
-        print("📋 Returning fallback response for testing")
         return {
-            "treatmentProgram": {
-                "hydration": 70.0,
-                "elasticity": 65.0,
-                "complexion": 75.0,
-                "texture": 70.0
-            },
             "skinHealthMatrix": {
-                "pores": 60.0,
-                "underEyeAppearance": 50.0,
-                "blemishes": 40.0,
-                "spots": 0.0,
-                "redness": 45.0,
-                "oiliness": 65.0,
-                "fineLines": 40.0,
-                "texture": 70.0
+                "moisture": 50.0,
+                "texture": 50.0,
+                "acne": 50.0,
+                "dryness": 50.0,
+                "elasticity": 50.0,
+                "complexion": 50.0
             },
             "amRoutine": {
                 "steps": [
                     {
                         "step_number": 1,
-                        "product_type": "Gentle Facial Cleanser",
-                        "description": "FALLBACK: Cleanse face with gentle cleanser to remove impurities and prepare skin."
+                        "product_type": "Gentle Cleanser",
+                        "description": "Gently cleanse skin with lukewarm water, avoiding harsh scrubbing. Rinse thoroughly and pat dry."
                     },
                     {
                         "step_number": 2,
-                        "product_type": "Antioxidant Serum",
-                        "description": "FALLBACK: Apply antioxidant serum to brighten and protect skin from damage."
+                        "product_type": "Lightweight Moisturizer",
+                        "description": "Apply a thin layer of moisturizer to hydrate and protect skin. Use gentle upward strokes."
                     },
                     {
                         "step_number": 3,
-                        "product_type": "Lightweight Moisturizer",
-                        "description": "FALLBACK: Hydrate skin with lightweight moisturizer for all-day comfort."
+                        "product_type": "Vitamin C Serum",
+                        "description": "Apply a small amount of serum to brighten skin and provide antioxidant protection. Use gentle patting motions."
                     },
                     {
                         "step_number": 4,
-                        "product_type": "Broad-Spectrum SPF",
-                        "description": "FALLBACK: Protect with broad-spectrum sunscreen to prevent sun damage."
+                        "product_type": "Broad-Spectrum SPF 30",
+                        "description": "Apply sunscreen liberally to protect skin from sun damage. Reapply every two hours when outdoors."
                     }
                 ]
             },
@@ -366,51 +219,35 @@ class AISkinAnalysisService:
                 "steps": [
                     {
                         "step_number": 1,
-                        "product_type": "Double Cleanse System",
-                        "description": "FALLBACK: Remove makeup and cleanse thoroughly for clean skin."
+                        "product_type": "Oil-Free Makeup Remover",
+                        "description": "Remove makeup and cleanse skin thoroughly using a gentle, oil-free makeup remover. Massage gently and rinse."
                     },
                     {
                         "step_number": 2,
-                        "product_type": "Targeted Treatment Serum",
-                        "description": "FALLBACK: Apply targeted treatment for your specific skin concerns."
+                        "product_type": "Gentle Cleanser",
+                        "description": "Follow with a gentle cleanser to remove any remaining impurities. Use circular motions and rinse thoroughly."
                     },
                     {
                         "step_number": 3,
-                        "product_type": "Night Repair Moisturizer",
-                        "description": "FALLBACK: Use nourishing night cream for overnight repair and hydration."
+                        "product_type": "Night Cream",
+                        "description": "Apply a thin layer of night cream to help repair and rejuvenate skin overnight. Use gentle upward strokes."
+                    },
+                    {
+                        "step_number": 4,
+                        "product_type": "Eye Cream",
+                        "description": "Apply a small amount of eye cream around the eye area using your ring finger. Pat gently until absorbed."
                     }
                 ]
             },
-            "nutritionRecommendations": "FALLBACK: General nutrition advice (AI analysis failed)",
-            "productRecommendations": "FALLBACK: Basic products (AI analysis failed)",
-            "ingredientRecommendations": "FALLBACK: Common ingredients (AI analysis failed)",
-            "fallback_message": "⚠️ AI ANALYSIS FAILED - This is fallback data for testing"
+            "nutritionRecommendations": "Eat a balanced diet rich in fruits, vegetables, and whole grains; limit processed foods and sugar.",
+            "productRecommendations": ["Gentle Cleanser", "Lightweight Moisturizer", "Vitamin C Serum", "Broad-Spectrum SPF 30", "Oil-Free Makeup Remover", "Night Cream", "Eye Cream"],
+            "ingredientRecommendations": ["Vitamin C", "Hyaluronic Acid", "Niacinamide", "Retinol", "Peptides"]
         }
 
-    def _get_error_response(self, error_message: str) -> Dict[str, Any]:
+    def _convert_to_string(self, data):
         """
-        Return error response with actual error message
+        Convert data to string format for database storage
         """
-        print(f"📋 Returning error response: {error_message}")
-        return {
-            "error": True,
-            "error_message": f"AI Analysis Failed: {error_message}",
-            "treatmentProgram": {},
-            "skinHealthMatrix": {},
-            "amRoutine": {"steps": []},
-            "pmRoutine": {"steps": []},
-            "nutritionRecommendations": "",
-            "productRecommendations": "",
-            "ingredientRecommendations": ""
-        }
-
-    def _convert_to_string(self, value) -> str:
-        """
-        Convert value to string, handling both strings and lists
-        """
-        if isinstance(value, list):
-            return ", ".join(value)
-        elif isinstance(value, str):
-            return value
-        else:
-            return str(value) 
+        if isinstance(data, list):
+            return ", ".join(data)
+        return str(data)

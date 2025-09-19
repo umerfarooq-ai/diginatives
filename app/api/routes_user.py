@@ -12,7 +12,13 @@ from datetime import timedelta
 from app.crud import user_profile as crud_user_profile
 from app.schemas.user_profile import UserProfileCreate , UserProfileRead
 from app.schemas.user import UserWithProfileRead
+from pydantic import BaseModel
 
+
+# Custom login form without OAuth2 extra fields
+class SimpleLoginForm(BaseModel):
+    email: str
+    password: str
 
 
 router = APIRouter()
@@ -61,11 +67,11 @@ def activate_user_otp(verify_in: OTPVerify, db: Session = Depends(get_db)):
     crud_user.set_verified(db, user, True)
     return {"msg": "User activated"}
 
-# Login
+# Login - Updated to use simple form
 @router.post("/login", response_model=Token)
-def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = crud_user.get_by_email(db, email=form_data.username)
-    if not user or not crud_user.check_password(user, form_data.password):
+def login_user(login_data: SimpleLoginForm, db: Session = Depends(get_db)):
+    user = crud_user.get_by_email(db, email=login_data.email)
+    if not user or not crud_user.check_password(user, login_data.password):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     if not user.is_verified:
         raise HTTPException(status_code=400, detail="User not activated")
@@ -148,4 +154,4 @@ def verify_refresh_token(token: str = Body(...)):
     email = payload.get("sub")
     # Issue a new access token
     new_access_token = security.create_access_token({"sub": email})
-    return {"valid": True, "access_token": new_access_token, "token_type": "bearer"} 
+    return {"valid": True, "access_token": new_access_token, "token_type": "bearer"}

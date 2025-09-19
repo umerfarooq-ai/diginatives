@@ -1,12 +1,13 @@
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from jose import JWTError
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.db.session import SessionLocal
 from app.core.security import decode_access_token
 from app.crud.user import get_by_email
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
+# Use HTTPBearer instead of OAuth2PasswordBearer to avoid OAuth2 UI
+security = HTTPBearer(auto_error=False)
 
 def get_db():
     db = SessionLocal()
@@ -15,14 +16,18 @@ def get_db():
     finally:
         db.close()
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
+    if not credentials:
+        raise credentials_exception
+        
     try:
-        payload = decode_access_token(token)
+        payload = decode_access_token(credentials.credentials)
         if payload is None:
             raise credentials_exception
         email: str = payload.get("sub")
@@ -33,4 +38,4 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     user = get_by_email(db, email=email)
     if user is None:
         raise credentials_exception
-    return user 
+    return user

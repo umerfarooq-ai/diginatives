@@ -13,25 +13,17 @@ class SkinAnalysis(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     image_path = Column(String(255), nullable=False)
 
-    # Treatment Program Scores
-    hydration_score = Column(Float, nullable=False)
+    # Skin Health Matrix Scores (6 main parameters)
+    moisture_score = Column(Float, nullable=False)
+    texture_score = Column(Float, nullable=False)
+    acne_score = Column(Float, nullable=False)
+    dryness_score = Column(Float, nullable=False)
     elasticity_score = Column(Float, nullable=False)
     complexion_score = Column(Float, nullable=False)
-    texture_score = Column(Float, nullable=False)
-
-    # Skin Health Matrix Scores
-    pores_score = Column(Float, nullable=False)
-    eye_bags_score = Column(Float, nullable=False)
-    acne_score = Column(Float, nullable=False)
-    spots_score = Column(Float, nullable=False)
-    redness_score = Column(Float, nullable=False)
-    oiliness_score = Column(Float, nullable=False)
-    wrinkles_score = Column(Float, nullable=False)
-    skin_texture_score = Column(Float, nullable=False)
 
     # Enhanced Recommendations with structured routines
-    am_routine = Column(JSON, nullable=True)  # Changed to JSON for structured data
-    pm_routine = Column(JSON, nullable=True)  # Changed to JSON for structured data
+    am_routine = Column(JSON, nullable=True)
+    pm_routine = Column(JSON, nullable=True)
     nutrition_recommendations = Column(Text, nullable=True)
     product_recommendations = Column(Text, nullable=True)
     ingredient_recommendations = Column(Text, nullable=True)

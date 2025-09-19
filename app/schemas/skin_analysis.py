@@ -13,23 +13,14 @@ class SkinAnalysisRequest(BaseModel):
     user_id: int
     analysis_date: Optional[str] = None
 
-# Treatment Program Schema
-class TreatmentProgram(BaseModel):
-    hydration: float
+# Skin Health Matrix Schema (6 main parameters)
+class SkinHealthMatrix(BaseModel):
+    moisture: float
+    texture: float
+    acne: float
+    dryness: float
     elasticity: float
     complexion: float
-    texture: float
-
-# Skin Health Matrix Schema
-class SkinHealthMatrix(BaseModel):
-    pores: float
-    underEyeAppearance: float
-    blemishes: float
-    spots: float
-    redness: float
-    oiliness: float
-    fineLines: float
-    texture: float
 
 # Enhanced Routine Schema
 class DetailedRoutine(BaseModel):
@@ -38,7 +29,6 @@ class DetailedRoutine(BaseModel):
 # AI Response Schema
 class SkinAnalysisData(BaseModel):
     scanId: str
-    treatmentProgram: TreatmentProgram
     skinHealthMatrix: SkinHealthMatrix
     amRoutine: DetailedRoutine
     pmRoutine: DetailedRoutine
@@ -56,20 +46,14 @@ class SkinAnalysisCreate(BaseModel):
     scan_id: str
     user_id: int
     image_path: str
-    hydration_score: float
+    moisture_score: float
+    texture_score: float
+    acne_score: float
+    dryness_score: float
     elasticity_score: float
     complexion_score: float
-    texture_score: float
-    pores_score: float
-    eye_bags_score: float
-    acne_score: float
-    spots_score: float
-    redness_score: float
-    oiliness_score: float
-    wrinkles_score: float
-    skin_texture_score: float
-    am_routine: Dict[str, Any]  # JSON data
-    pm_routine: Dict[str, Any]  # JSON data
+    am_routine: Dict[str, Any]
+    pm_routine: Dict[str, Any]
     nutrition_recommendations: str
     product_recommendations: str
     ingredient_recommendations: str
@@ -80,18 +64,12 @@ class SkinAnalysisRead(BaseModel):
     scan_id: str
     user_id: int
     image_path: str
-    hydration_score: float
+    moisture_score: float
+    texture_score: float
+    acne_score: float
+    dryness_score: float
     elasticity_score: float
     complexion_score: float
-    texture_score: float
-    pores_score: float
-    eye_bags_score: float
-    acne_score: float
-    spots_score: float
-    redness_score: float
-    oiliness_score: float
-    wrinkles_score: float
-    skin_texture_score: float
     am_routine: Optional[Dict[str, Any]]
     pm_routine: Optional[Dict[str, Any]]
     nutrition_recommendations: str
