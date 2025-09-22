@@ -94,6 +94,7 @@ async def analyze_skin(
             "dryness_score": matrix["dryness"],
             "elasticity_score": matrix["elasticity"],
             "complexion_score": matrix["complexion"],
+            "skin_age_score": matrix["skin_age"],
             "am_routine": ai_result.get("amRoutine", {}),
             "pm_routine": ai_result.get("pmRoutine", {}),
             "nutrition_recommendations": ai_result.get("nutritionRecommendations", ""),
@@ -151,7 +152,8 @@ async def get_skin_analysis(
             "acne": skin_analysis.acne_score,
             "dryness": skin_analysis.dryness_score,
             "elasticity": skin_analysis.elasticity_score,
-            "complexion": skin_analysis.complexion_score
+            "complexion": skin_analysis.complexion_score,
+            "skin_age": skin_analysis.skin_age_score
         },
         "amRoutine": skin_analysis.am_routine or {"steps": []},
         "pmRoutine": skin_analysis.pm_routine or {"steps": []},
@@ -208,7 +210,8 @@ async def get_user_skin_analysis_history(
                 "acne": analysis.acne_score,
                 "dryness": analysis.dryness_score,
                 "elasticity": analysis.elasticity_score,
-                "complexion": analysis.complexion_score
+                "complexion": analysis.complexion_score,
+                "skin_age": analysis.skin_age_score
             },
             "amRoutine": analysis.am_routine or {"steps": []},
             "pmRoutine": analysis.pm_routine or {"steps": []},

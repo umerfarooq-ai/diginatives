@@ -37,7 +37,8 @@ class AISkinAnalysisService:
                 "acne": float (0-100),
                 "dryness": float (0-100),
                 "elasticity": float (0-100),
-                "complexion": float (0-100)
+                "complexion": float (0-100),
+                "skin_age": float (actual age the skin appears to be)
             },
             "amRoutine": {
                 "steps": [
@@ -189,7 +190,8 @@ class AISkinAnalysisService:
                 "acne": 50.0,
                 "dryness": 50.0,
                 "elasticity": 50.0,
-                "complexion": 50.0
+                "complexion": 50.0,
+                "skin_age": 30.0
             },
             "amRoutine": {
                 "steps": [

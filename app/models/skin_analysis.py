@@ -20,6 +20,7 @@ class SkinAnalysis(Base):
     dryness_score = Column(Float, nullable=False)
     elasticity_score = Column(Float, nullable=False)
     complexion_score = Column(Float, nullable=False)
+    skin_age_score = Column(Float, nullable=False)
 
     # Enhanced Recommendations with structured routines
     am_routine = Column(JSON, nullable=True)

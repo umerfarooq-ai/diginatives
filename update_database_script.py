@@ -5,7 +5,7 @@ Use only in development/testing environments!
 """
 from app.db.base import Base
 from app.db.session import engine
-import app.models.user, app.models.otp, app.models.user_profile, app.models.skin_analysis
+import app.models.user, app.models.otp, app.models.user_profile, app.models.skin_analysis, app.models.daily_skin_log
 
 if __name__ == "__main__":
     print("Dropping all tables...")

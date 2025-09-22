@@ -1,9 +1,10 @@
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, date
 
 class UserProfileBase(BaseModel):
     age: Optional[int] = None
+    date_of_birth: Optional[date] = None
     gender: Optional[str] = None
     skin_type: Optional[str] = None
     shine_on_face: Optional[str] = None

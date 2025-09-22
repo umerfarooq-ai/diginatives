@@ -13,7 +13,7 @@ class SkinAnalysisRequest(BaseModel):
     user_id: int
     analysis_date: Optional[str] = None
 
-# Skin Health Matrix Schema (6 main parameters)
+# Skin Health Matrix Schema
 class SkinHealthMatrix(BaseModel):
     moisture: float
     texture: float
@@ -21,6 +21,7 @@ class SkinHealthMatrix(BaseModel):
     dryness: float
     elasticity: float
     complexion: float
+    skin_age: float
 
 # Enhanced Routine Schema
 class DetailedRoutine(BaseModel):
@@ -52,6 +53,7 @@ class SkinAnalysisCreate(BaseModel):
     dryness_score: float
     elasticity_score: float
     complexion_score: float
+    skin_age_score: float
     am_routine: Dict[str, Any]
     pm_routine: Dict[str, Any]
     nutrition_recommendations: str
@@ -70,6 +72,7 @@ class SkinAnalysisRead(BaseModel):
     dryness_score: float
     elasticity_score: float
     complexion_score: float
+    skin_age_score: float
     am_routine: Optional[Dict[str, Any]]
     pm_routine: Optional[Dict[str, Any]]
     nutrition_recommendations: str

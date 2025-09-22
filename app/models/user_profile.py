@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, func
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, func, Date
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 
@@ -7,6 +7,7 @@ class UserProfile(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
     age = Column(Integer, nullable=True)
+    date_of_birth = Column(Date, nullable=True)
     gender = Column(String, nullable=True)
     skin_type = Column(String, nullable=True)
     shine_on_face = Column(String, nullable=True)
