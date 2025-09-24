@@ -14,6 +14,7 @@ class User(Base):
     last_name = Column(String, nullable=True)
     image = Column(String, nullable=True)
     skin_analyses = relationship("SkinAnalysis", back_populates="user")
-    daily_skin_logs = relationship("DailySkinLog", back_populates="user") 
+    daily_skin_logs = relationship("DailySkinLog", back_populates="user")
+    reminders = relationship("Reminder", back_populates="user")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
