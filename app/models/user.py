@@ -13,6 +13,7 @@ class User(Base):
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
     image = Column(String, nullable=True)
+    device_token = Column(String(255), nullable=True)
     skin_analyses = relationship("SkinAnalysis", back_populates="user")
     daily_skin_logs = relationship("DailySkinLog", back_populates="user")
     reminders = relationship("Reminder", back_populates="user")

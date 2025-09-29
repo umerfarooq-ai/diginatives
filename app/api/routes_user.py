@@ -13,6 +13,7 @@ from app.crud import user_profile as crud_user_profile
 from app.schemas.user_profile import UserProfileCreate , UserProfileRead
 from app.schemas.user import UserWithProfileRead
 from pydantic import BaseModel
+from app.models.user import User
 
 
 # Custom login form without OAuth2 extra fields
@@ -155,3 +156,68 @@ def verify_refresh_token(token: str = Body(...)):
     # Issue a new access token
     new_access_token = security.create_access_token({"sub": email})
     return {"valid": True, "access_token": new_access_token, "token_type": "bearer"}
+
+# Device Token Management for Push Notifications
+class DeviceTokenUpdate(BaseModel):
+    device_token: str
+
+@router.post("/device-token")
+async def update_device_token(
+    device_token_data: DeviceTokenUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update user's device token for push notifications
+    
+    This endpoint is called by the mobile app when:
+    1. User logs in
+    2. App gets a new device token
+    3. User wants to enable/disable notifications
+    """
+    try:
+        # Update user's device token
+        current_user.device_token = device_token_data.device_token
+        db.commit()
+        db.refresh(current_user)
+        
+        print(f"Device token updated for user {current_user.id}: {device_token_data.device_token[:20]}...")
+        
+        return {
+            "message": "Device token updated successfully",
+            "user_id": current_user.id,
+            "device_token_updated": True
+        }
+    except Exception as e:
+        print(f"Error updating device token: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to update device token"
+        )
+
+@router.delete("/device-token")
+async def remove_device_token(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Remove user's device token (disable push notifications)
+    """
+    try:
+        current_user.device_token = None
+        db.commit()
+        db.refresh(current_user)
+        
+        print(f"Device token removed for user {current_user.id}")
+        
+        return {
+            "message": "Device token removed successfully",
+            "user_id": current_user.id,
+            "device_token_removed": True
+        }
+    except Exception as e:
+        print(f"Error removing device token: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to remove device token"
+        )

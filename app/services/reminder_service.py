@@ -3,6 +3,8 @@ from datetime import datetime, time
 from sqlalchemy.orm import Session
 from app.crud import reminder as crud_reminder
 from app.models.reminder import Reminder
+from app.models.user import User
+from app.services.push_notification import push_service
 from typing import List
 import logging
 
@@ -30,7 +32,6 @@ class ReminderService:
                 logger.error(f"Error in reminder checker: {e}")
                 await asyncio.sleep(60)
 
-                # app/services/reminder_service.py
     async def check_reminders(self, db: Session):
         """Check if it's time to send reminders"""
         current_time = datetime.now().strftime("%H:%M")
@@ -46,38 +47,13 @@ class ReminderService:
 
         for reminder in all_reminders:
             try:
-                should_send = self.should_send_reminder(reminder, current_time, current_weekday,
-                                                        current_day)
-                print(
-                    f" Reminder '{reminder.name}' at {reminder.time} ({reminder.frequency}): {'✅ SEND' if should_send else '❌ Skip'}")
+                should_send = self.should_send_reminder(reminder, current_time, current_weekday, current_day)
+                print(f"🔔 Reminder '{reminder.name}' at {reminder.time} ({reminder.frequency}): {'✅ SEND' if should_send else '❌ Skip'}")
 
                 if should_send:
-                    await self.send_reminder(reminder)
+                    await self.send_reminder(reminder, db)
             except Exception as e:
                 logger.error(f"Error checking reminder {reminder.id}: {e}")
-
-
-    # async def check_reminders(self, db: Session):
-    #     """
-    #     WHAT THIS DOES:
-    #     - Gets current time (e.g., 22:00)
-    #     - Gets current day of week (e.g., Monday = 1)
-    #     - Gets current day of month (e.g., 15th)
-    #     - Checks each reminder to see if it's time
-    #     """
-    #     current_time = datetime.now().strftime("%H:%M")
-    #     current_weekday = datetime.now().weekday() + 1  # 1=Monday, 7=Sunday
-    #     current_day = datetime.now().day  # Day of month (1-31)
-    #
-    #     # Get all active reminders
-    #     all_reminders = db.query(Reminder).filter(Reminder.is_active == True).all()
-    #
-    #     for reminder in all_reminders:
-    #         try:
-    #             if self.should_send_reminder(reminder, current_time, current_weekday, current_day):
-    #                 await self.send_reminder(reminder)
-    #         except Exception as e:
-    #             logger.error(f"Error checking reminder {reminder.id}: {e}")
 
     def should_send_reminder(self, reminder, current_time: str, current_weekday: int, current_day: int) -> bool:
         """
@@ -109,18 +85,32 @@ class ReminderService:
 
         return False
 
-    async def send_reminder(self, reminder):
+    async def send_reminder(self, reminder, db: Session):
         """
         WHAT THIS DOES:
-        - Sends notification to user's phone
+        - Sends push notification to user's phone
         - Like WhatsApp message or alarm
         - User gets notification even if app is closed
         """
-        message = f"Time for: {reminder.name}"
+        message = f"⏰ Time for: {reminder.name}"
+        print(f" REMINDER SENT: {message}")
         logger.info(f"REMINDER: {message}")
 
-        # TODO: Add actual push notification here
-        # await self.send_push_notification(reminder.user_id, message)
+        # Get user's device token
+        user = db.query(User).filter(User.id == reminder.user_id).first()
+        if user and user.device_token:
+            # Send push notification
+            success = await push_service.send_push_notification(
+                device_token=user.device_token,
+                title="⏰ Glowzel Reminder",
+                body=message
+            )
+            if success:
+                print(f"✅ Push notification sent to user {user.id}")
+            else:
+                print(f"❌ Failed to send push notification to user {user.id}")
+        else:
+            print(f"⚠️ No device token found for user {reminder.user_id}")
 
     def stop(self):
         """Stop the reminder checker"""
