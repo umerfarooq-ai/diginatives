@@ -12,6 +12,7 @@ def create_user(db: Session, user_in: UserCreate):
         hashed_password=get_password_hash(user_in.password),
         is_active=True,
         is_verified=False,
+        is_first_login=True,  # New users start with first login = True
         first_name=user_in.first_name,
         last_name=user_in.last_name,
         image=user_in.image
@@ -55,6 +56,13 @@ def set_active(db: Session, user: User, active: bool):
 
 def set_verified(db: Session, user: User, verified: bool):
     user.is_verified = verified
+    db.commit()
+    db.refresh(user)
+    return user
+
+def mark_first_login_completed(db: Session, user: User):
+    """Mark that user has completed their first login"""
+    user.is_first_login = False
     db.commit()
     db.refresh(user)
     return user

@@ -68,7 +68,7 @@ def activate_user_otp(verify_in: OTPVerify, db: Session = Depends(get_db)):
     crud_user.set_verified(db, user, True)
     return {"msg": "User activated"}
 
-# Login - Updated to use simple form
+# Login - Updated to include first login status
 @router.post("/login", response_model=Token)
 def login_user(login_data: SimpleLoginForm, db: Session = Depends(get_db)):
     user = crud_user.get_by_email(db, email=login_data.email)
@@ -76,10 +76,22 @@ def login_user(login_data: SimpleLoginForm, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     if not user.is_verified:
         raise HTTPException(status_code=400, detail="User not activated")
+    
+    # Check if this is first login before marking it as completed
+    is_first_login = user.is_first_login
+    
+    # Mark first login as completed after successful login
+    if is_first_login:
+        crud_user.mark_first_login_completed(db, user)
+    
     access_token = security.create_access_token(
         data={"sub": user.email}
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer",
+        "is_first_login": is_first_login  # Return the original value (True for first time, False for subsequent)
+    }
 
 # Forgot password (send OTP)
 @router.post("/forgot-password")

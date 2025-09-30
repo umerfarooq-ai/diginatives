@@ -10,6 +10,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
+    is_first_login = Column(Boolean, default=True)
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
     image = Column(String, nullable=True)

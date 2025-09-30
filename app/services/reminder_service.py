@@ -43,12 +43,12 @@ class ReminderService:
 
         # Get all active reminders
         all_reminders = db.query(Reminder).filter(Reminder.is_active == True).all()
-        print(f"📋 Found {len(all_reminders)} active reminders")
+        print(f" Found {len(all_reminders)} active reminders")
 
         for reminder in all_reminders:
             try:
                 should_send = self.should_send_reminder(reminder, current_time, current_weekday, current_day)
-                print(f"🔔 Reminder '{reminder.name}' at {reminder.time} ({reminder.frequency}): {'✅ SEND' if should_send else '❌ Skip'}")
+                print(f" Reminder '{reminder.name}' at {reminder.time} ({reminder.frequency}): {'✅ SEND' if should_send else '❌ Skip'}")
 
                 if should_send:
                     await self.send_reminder(reminder, db)
@@ -92,7 +92,7 @@ class ReminderService:
         - Like WhatsApp message or alarm
         - User gets notification even if app is closed
         """
-        message = f"⏰ Time for: {reminder.name}"
+        message = f"Time for: {reminder.name}"
         print(f" REMINDER SENT: {message}")
         logger.info(f"REMINDER: {message}")
 
@@ -102,15 +102,15 @@ class ReminderService:
             # Send push notification
             success = await push_service.send_push_notification(
                 device_token=user.device_token,
-                title="⏰ Glowzel Reminder",
+                title="Glowzel Reminder",
                 body=message
             )
             if success:
-                print(f"✅ Push notification sent to user {user.id}")
+                print(f"Push notification sent to user {user.id}")
             else:
-                print(f"❌ Failed to send push notification to user {user.id}")
+                print(f"Failed to send push notification to user {user.id}")
         else:
-            print(f"⚠️ No device token found for user {reminder.user_id}")
+            print(f"No device token found for user {reminder.user_id}")
 
     def stop(self):
         """Stop the reminder checker"""

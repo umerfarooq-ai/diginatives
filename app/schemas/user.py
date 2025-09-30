@@ -18,6 +18,7 @@ class UserRead(UserBase):
     id: int
     is_active: bool
     is_verified: bool
+    is_first_login: bool  # Add this field
     class Config:
         from_attributes = True
 
@@ -38,12 +39,14 @@ class UserInDB(UserBase):
     hashed_password: str
     is_active: bool
     is_verified: bool
+    is_first_login: bool  # Add this field
     class Config:
         from_attributes = True
 
 class Token(BaseModel):
     access_token: str
     token_type: str
+    is_first_login: bool  # Add this field to login response
 
 class TokenData(BaseModel):
     email: Optional[str] = None

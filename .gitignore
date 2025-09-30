@@ -27,3 +27,17 @@ Thumbs.db
 
 # Cursor
 .cursor/
+
+
+# Uploaded files and media
+uploads/
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.webp
+*.pdf
+*.mp4
+*.mov
+*.avi
