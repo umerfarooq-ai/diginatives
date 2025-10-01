@@ -48,7 +48,7 @@ class ReminderService:
         for reminder in all_reminders:
             try:
                 should_send = self.should_send_reminder(reminder, current_time, current_weekday, current_day)
-                print(f" Reminder '{reminder.name}' at {reminder.time} ({reminder.frequency}): {'✅ SEND' if should_send else '❌ Skip'}")
+                print(f" Reminder '{reminder.name}' at {reminder.time} ({reminder.frequency}): {'SEND' if should_send else 'Skip'}")
 
                 if should_send:
                     await self.send_reminder(reminder, db)
